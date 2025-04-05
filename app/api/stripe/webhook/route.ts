@@ -9,6 +9,8 @@ import stripe from "@/lib/stripe";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
+
+
 export async function POST(req: Request) {
   try {
     const body = await req.text();
@@ -70,3 +72,6 @@ export async function POST(req: Request) {
     return new NextResponse('Error in POST": $(error)', { status: 500 }); //INTERNAL SERVER ERROR
   }
 }
+
+
+

@@ -71,8 +71,14 @@ export async function createStripeCheckout(courseId: string, userId: string) {
       success_url: `${baseUrl}/courses/${slug.current}?payment_success=true`,
       cancel_url: `${baseUrl}/courses/${slug.current}?canceled=true`,
       metadata: {
-        courseId:  String(course._id),  // Explicit string conversion
-        userId: String(userId),         // Explicit string conversion
+        courseId: course._id,
+        userId: userId,
+      },
+      payment_intent_data: {  // Add this to ensure metadata persists
+        metadata: {
+          courseId: course._id,
+          userId: userId,
+        }
       },
       line_items: [
         {
