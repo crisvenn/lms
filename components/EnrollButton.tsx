@@ -5,7 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 function EnrollButton({
   courseId,
@@ -17,6 +17,31 @@ function EnrollButton({
   const { user, isLoaded: isUserLoaded } = useUser();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  useEffect(() => {
+    const checkPaymentStatus = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+      
+      if (sessionId && user?.id && !isEnrolled) {
+        setIsVerifying(true);
+        try {
+          // Check every 2 seconds for 10 seconds max
+          for (let i = 0; i < 5; i++) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            router.refresh(); // Force refresh to check enrollment status
+            if (isEnrolled) break;
+          }
+        } finally {
+          setIsVerifying(false);
+        }
+      }
+    };
+    
+    checkPaymentStatus();
+  }, [user?.id, isEnrolled, router]);
+  
 
   const handleEnroll = async (courseId: string) => {
     startTransition(async () => {
@@ -36,10 +61,11 @@ function EnrollButton({
   };
 
   // Show loading state while checking user is loading
-  if (!isUserLoaded || isPending) {
+  if (!isUserLoaded || isPending || isVerifying) {
     return (
       <div className="w-full h-12 rounded-lg bg-gray-100 flex items-center justify-center">
         <div className="w-5 h-5 border-2 border-gray-400 border-t-gray-600 rounded-full animate-spin" />
+        {isVerifying && <span className="ml-2">Verifying payment...</span>}
       </div>
     );
   }

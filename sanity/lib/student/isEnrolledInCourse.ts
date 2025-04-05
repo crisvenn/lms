@@ -1,3 +1,5 @@
+//isEnrolledCourse
+
 import groq from "groq";
 import { sanityFetch } from "../live";
 

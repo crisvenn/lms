@@ -1,3 +1,5 @@
+//createStripeCheckout.ts
+
 "use server";
 
 import stripe from "@/lib/stripe";
@@ -50,6 +52,7 @@ export async function createStripeCheckout(courseId: string, userId: string) {
         courseId: course._id,
         paymentId: "free",
         amount: 0,
+        //studentEmail: email
       });
 
       return { url: `/courses/${course.slug?.current}` };
@@ -65,11 +68,11 @@ export async function createStripeCheckout(courseId: string, userId: string) {
     const session = await stripe.checkout.sessions.create({
       
       mode: "payment",
-      success_url: `${baseUrl}/courses/${slug.current}`,
+      success_url: `${baseUrl}/courses/${slug.current}?payment_success=true`,
       cancel_url: `${baseUrl}/courses/${slug.current}?canceled=true`,
       metadata: {
-        courseId: course._id,
-        userId: userId,
+        courseId:  String(course._id),  // Explicit string conversion
+        userId: String(userId),         // Explicit string conversion
       },
       line_items: [
         {
