@@ -3,7 +3,7 @@ import { completeLessonById } from "@/sanity/lib/lessons/completeLessonById";
 
 export async function completeLessonAction( lessonId: string, clerkId: string) {
   try {
-    return await completeLessonById({
+       return await completeLessonById({
         lessonId, 
         clerkId
     });

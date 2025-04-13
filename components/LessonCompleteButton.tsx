@@ -1,5 +1,5 @@
 'use client';
-
+export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useTransition } from "react";
 import { Button } from "./ui/button";
@@ -8,117 +8,115 @@ import { cn } from "@/lib/utils";
 import { getLessonCompletionStatusAction } from "@/actions/getLessonCompletionStatusAction";
 import { completeLessonAction } from "@/actions/completeLessonAction";
 import { uncompleteLessonAction } from "@/actions/uncompleteLessonAction";
-//import { getLessonCompletionStatusAction } from "@/app/actions/getLessonCompletionStatusAction";
+
 interface LessonCompleteButtonProps {
     lessonId: string;
     clerkId: string;
-  }
-
-function LessonCompleteButton(
-    {
-        lessonId,
-        clerkId,
-    } : LessonCompleteButtonProps) 
-    {
-        const [isPending, setIsPending] = useState(false);
-        const [isCompleted, setIsCompleted] = useState<boolean | null>(null);
-        const [isPendingTransition, startTransition] = useTransition();
-       
-
-        useEffect(() => {
-            startTransition(async () => {
-              try {
-                const status = await getLessonCompletionStatusAction(lessonId, clerkId);
-                setIsCompleted(status);
-              } catch (error) {
-                console.error("Error checking lesson completion status:", error);
-                setIsCompleted(false);
-              }
-            });
-          }, [lessonId, clerkId]);
-
-          const handleToggle = async () => {
-            try {
-              setIsPending(true);
-              if (isCompleted) {
-                await uncompleteLessonAction(lessonId, clerkId);
-              } else {
-                await completeLessonAction(lessonId, clerkId);
-              }
-        
-              startTransition(async () => {
-                const newStatus = await getLessonCompletionStatusAction(
-                  lessonId,
-                  clerkId
-                );
-                setIsCompleted(newStatus);
-              });
-        
-              
-            } catch (error) {
-              console.error("Error toggling lesson completion:", error);
-            } finally {
-              setIsPending(false);
-            }
-          };
-        
-          
-          const isLoading = isCompleted === null || isPendingTransition;
-
-          return (
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t z-50">
-              <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    {isCompleted
-                      ? "Lesson completed!"
-                      : "Ready to complete this lesson?"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {isCompleted
-                      ? "You can mark it as incomplete if you need to revisit it."
-                      : "Mark it as complete when you're done."}
-                  </p>
-                </div>
-                <Button
-                  onClick={handleToggle}
-                  disabled={isPending || isLoading}
-                  size="lg"
-                  variant="default"
-                  className={cn(
-                    "min-w-[200px] transition-all duration-200 ease-in-out",
-                    isCompleted
-                      ? "bg-red-600 hover:bg-red-700 text-white"
-                      : "bg-green-600 hover:bg-green-700 text-white"
-                  )}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Updating...
-                    </>
-                  ) : isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {isCompleted ? "Uncompleting..." : "Completing..."}
-                    </>
-                  ) : isCompleted ? (
-                    <>
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Mark as Not Complete
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Mark as Complete
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          );
-  
 }
 
-export default LessonCompleteButton
+function LessonCompleteButton({
+    lessonId,
+    clerkId,
+}: LessonCompleteButtonProps) {
+    const [isPending, setIsPending] = useState(false);
+    const [isCompleted, setIsCompleted] = useState<boolean | null>(null);
+    const [isPendingTransition, startTransition] = useTransition();
 
+    useEffect(() => {
+        // Fetch lesson completion status when the component mounts or when `lessonId` or `clerkId` changes
+        startTransition(async () => {
+            try {
+                const status = await getLessonCompletionStatusAction(lessonId, clerkId);
+                setIsCompleted(status);
+            } catch (error) {
+                console.error("Error checking lesson completion status:", error);
+                setIsCompleted(false);
+            }
+        });
+    }, [lessonId, clerkId]);
+
+    const handleToggle = async () => {
+        try {
+            setIsPending(true);
+
+            // Optimistic update: Immediately toggle the completion status in the UI
+            const newStatus = !isCompleted;  // Toggling the state
+            setIsCompleted(newStatus);  // Optimistic update on UI
+
+            // Perform the action (server side)
+            if (newStatus) {
+                await completeLessonAction(lessonId, clerkId);
+            } else {
+                await uncompleteLessonAction(lessonId, clerkId);
+            }
+
+            // After performing the action, re-fetch the status from the server
+            startTransition(async () => {
+                const updatedStatus = await getLessonCompletionStatusAction(lessonId, clerkId);
+                setIsCompleted(updatedStatus);  // Update state with the new status
+            });
+
+        } catch (error) {
+            console.error("Error toggling lesson completion:", error);
+        } finally {
+            setIsPending(false);
+        }
+    };
+
+    const isLoading = isCompleted === null || isPendingTransition;
+
+    return (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t z-50">
+            <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+                <div className="flex-1">
+                    <p className="text-sm font-medium">
+                        {isCompleted
+                            ? "Lesson completed!"
+                            : "Ready to complete this lesson?"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                        {isCompleted
+                            ? "You can mark it as incomplete if you need to revisit it."
+                            : "Mark it as complete when you're done."}
+                    </p>
+                </div>
+                <Button
+                    onClick={handleToggle}
+                    disabled={isPending || isLoading}
+                    size="lg"
+                    variant="default"
+                    className={cn(
+                        "min-w-[200px] transition-all duration-200 ease-in-out",
+                        isCompleted
+                            ? "bg-red-600 hover:bg-red-700 text-white"
+                            : "bg-green-600 hover:bg-green-700 text-white"
+                    )}
+                >
+                    {isLoading ? (
+                        <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Updating...
+                        </>
+                    ) : isPending ? (
+                        <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            {isCompleted ? "Uncompleting..." : "Completing..."}
+                        </>
+                    ) : isCompleted ? (
+                        <>
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Mark as Not Complete
+                        </>
+                    ) : (
+                        <>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Mark as Complete
+                        </>
+                    )}
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+export default LessonCompleteButton;

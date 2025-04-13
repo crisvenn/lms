@@ -1,4 +1,5 @@
 "use client";
+//export const dynamic = "force-dynamic";
 
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";

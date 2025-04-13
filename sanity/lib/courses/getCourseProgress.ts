@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { defineQuery } from "groq";
 import { sanityFetch } from "../live";
 import { getStudentByClerkId } from "../student/getStudentByClerkId";
@@ -45,3 +47,5 @@ export async function getCourseProgress(clerkId: string, courseId: string) {
     courseProgress,
   };
 }
+
+//getCourseProgress
